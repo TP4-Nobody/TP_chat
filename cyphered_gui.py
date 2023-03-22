@@ -15,6 +15,7 @@ class CypheredGUI(BasicGUI):
         super().__init__() # surcharge du constructeur
         self._key = None # clé de chiffrement
     
+    
     # Fonction pour ajouter un champ "password" dans la fenêtre de connexion
      def _create_connection_window(self)->None:
         # On reprend la méthode de la classe parente
@@ -44,17 +45,42 @@ class CypheredGUI(BasicGUI):
                 iterations=100000, # nombre d'itérations pour la génération de la clé
                 backend=default_backend()
             )
+            self._key = kdf.derive(password.encode()) # dérivation de la clé avec le password
 
-        def encrypt():
+
+    
+
+        # Fonction de chiffrement
+        def encrypt(self, message) -> None :
             iv = os.urandom(16) # génération d'un vecteur d'initialisation aléatoire
             cipher = Cipher(
                 algorithms.AES(self._key), 
                 modes.CBC(iv), 
                 backend=default_backend()
+                
                 )
             encryptor = cipher.encryptor()
+            padder = padding.PKCS7(128).padder()
+            padded_data = padder.update(message.encode()) + padder.finalize()
+            encrypted = encryptor.update(padded_data) + encryptor.finalize()
+            return encrypted, iv
+            
+        
 
-        def decrypt():
+
+        # Fonction de déchiffrement
+        def decrypt(iv):
+            cipher = Cipher(
+                algorithms.AES(self._key), 
+                modes.CBC(iv), 
+                backend=default_backend()
+                )
+            decryptor = cipher.decryptor()
+            
+
+            
+
+        
             
 
 
