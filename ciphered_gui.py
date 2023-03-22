@@ -7,8 +7,8 @@ from cryptography.hazmat.primitives import padding, hashes
 from cryptography.hazmat.backends import default_backend
 import os
 
-# Création de la classe CypheredGUI depuis l'héritage de BasicGUI
-class CypheredGUI(BasicGUI):
+# Création de la classe CipheredGUI depuis l'héritage de BasicGUI
+class CipheredGUI(BasicGUI):
      
      # Constructeur de la classe
      def __init__(self) -> None:
@@ -112,6 +112,6 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
 
     # instanciate the class, create context and related stuff, run the main loop
-    client = CypheredGUI()
+    client = CipheredGUI()
     client.create()
     client.loop()
