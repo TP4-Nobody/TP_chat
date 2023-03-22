@@ -47,9 +47,7 @@ class CypheredGUI(BasicGUI):
             )
             self._key = kdf.derive(password.encode()) # dérivation de la clé avec le password
 
-
     
-
         # Fonction de chiffrement
         def encrypt(self, message) -> None :
             iv = os.urandom(16) # génération d'un vecteur d'initialisation aléatoire
@@ -61,21 +59,45 @@ class CypheredGUI(BasicGUI):
                 )
             encryptor = cipher.encryptor()
             padder = padding.PKCS7(128).padder()
-            padded_data = padder.update(message.encode()) + padder.finalize()
+            padded_data = padder.update(bytes(message,"utf8")) + padder.finalize()
             encrypted = encryptor.update(padded_data) + encryptor.finalize()
             return encrypted, iv
             
         
-
-
         # Fonction de déchiffrement
-        def decrypt(iv):
+        def decrypt(self, message, iv) -> None :
             cipher = Cipher(
                 algorithms.AES(self._key), 
                 modes.CBC(iv), 
                 backend=default_backend()
                 )
             decryptor = cipher.decryptor()
+            decrypted = decryptor.update(message) + decryptor.finalize()
+            unpadder = padding.PKCS7(128).unpadder()
+            unpadded_data = unpadder.update(decrypted) + unpadder.finalize()
+            return unpadded_data.str(message,"utf8")
+        
+        # Fonction pour envoyer un message
+        def send(self, text) -> None :
+            super().send() # surcharge de la classe send()
+            encrypted, iv = self.encrypt(text) # on chiffre le message
+            self._socket.sendall(encrypted) # on envoie le message chiffré
+            self._socket.sendall(iv) # on envoie le vecteur d'initialisation
+
+    
+        # Fonction pour recevoir un message
+        def recv(self) -> None :
+            super().recv()
+            encrypted = self._socket.recv(1024) # on reçoit le message chiffré
+            iv = self._socket.recv(1024) # on reçoit le vecteur d'initialisation
+            decrypted = self.decrypt(encrypted, iv) # on déchiffre le message
+            return decrypted # on retourne le message déchiffré
+        
+        
+
+
+
+        
             
 
             
