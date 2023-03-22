@@ -55,7 +55,8 @@ class CipheredGUI(BasicGUI):
             salt=b'je veux reussir mon semestre', 
             iterations=100000, # nombre d'itérations pour la génération de la clé
             backend=default_backend())
-        self._key = kdf.derive(bytes(password, "utf8")) # dérivation de la clé avec le password
+        b_password = bytes(password, "utf8")
+        self._key = kdf.derive(b_password) # dérivation de la clé avec le password
         self._log.info(f"Clé {self._key}") # affichage de la clé dans la console
         dpg.hide_item("connection_windows")
         dpg.show_item("chat_windows")
@@ -72,12 +73,13 @@ class CipheredGUI(BasicGUI):
             backend=default_backend()
             )
         # Chiffrement du message
-        self._log.info("Message", message)
+        self._log.info(f"Message {message}")
         encryptor = cipher.encryptor()
         padder = padding.PKCS7(128).padder()
-        padded_data = padder.update(bytes(message,"utf8")) + padder.finalize()
+        b_message = bytes(message,"utf8")
+        padded_data = padder.update(b_message) + padder.finalize()
         encrypted = encryptor.update(padded_data) + encryptor.finalize()
-        self._log.info("Message chiffré", encrypted)
+        self._log.info(f"Message chiffré {encrypted}")
         return iv, encrypted    # on retourne le vecteur d'initialisation et le message chiffré
             
         
@@ -98,16 +100,22 @@ class CipheredGUI(BasicGUI):
 
     # Fonction pour envoyer un message
      def send(self, text) -> None :
+        self._log.info("DRAGON 2")
         message = self.encrypt(text) # on chiffre le message
+        self._log.info("DRAGON 3")
         self._client.send_message(message) # on envoie le message chiffré
+        self._log.info("DRAGON 4")
         
          
     # Fonction pour recevoir un message
      def recv(self) -> None:
          if self._callback is not None:
             for user, message in self._callback.get():
+                self._log.info("DRAGON 5")
                 message = self.decrypt(message) # on déchiffre le message
+                self._log.info("DRAGON 6")
                 self.update_text_screen(f"{user} : {str(message, 'utf8')}") # on affiche le message déchiffré
+                self._log.info("DRAGON 7")
             self._callback.clear()
 
     
