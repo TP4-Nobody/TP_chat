@@ -32,6 +32,7 @@ class CipheredGUI(BasicGUI):
             
             dpg.add_button(label="Connect", callback=self.run_chat)
 
+
     #Surcharge de la fonction run_chat pour ajouter la génération de la clé de chiffrement
      def run_chat(self, sender, app_data) -> None :
         # On reprend la méthode de la classe parente
@@ -44,6 +45,8 @@ class CipheredGUI(BasicGUI):
         self._client.start(self._callback) # démarrage du client
         self._client.register(name) # enregistrement du nom
         password = dpg.get_value("connection_password") # récupération du password
+
+        #self._log.info(f"Password {password}") # affichage du password dans la console
         
         # Génération de la clé de chiffrement
         kdf = PBKDF2HMAC(
@@ -57,7 +60,6 @@ class CipheredGUI(BasicGUI):
         dpg.hide_item("connection_windows")
         dpg.show_item("chat_windows")
         dpg.set_value("screen", "Connecting")
-
 
     
     # Fonction de chiffrement
@@ -93,6 +95,7 @@ class CipheredGUI(BasicGUI):
         unpadded_data = unpadder.update(decrypted) + unpadder.finalize()
         return unpadded_data.str(message,"utf8")
         
+
     # Fonction pour envoyer un message
      def send(self, text) -> None :
         message = self.encrypt(text) # on chiffre le message
@@ -100,8 +103,22 @@ class CipheredGUI(BasicGUI):
         
          
     # Fonction pour recevoir un message
-  
-        
+     def recv(self) -> None:
+         if self._callback is not None:
+            for user, message in self._callback.get():
+                message = self.decrypt(message) # on déchiffre le message
+                self.update_text_screen(f"{user} : {str(message, 'utf8')}") # on affiche le message déchiffré
+            self._callback.clear()
+
+    
+    #Surcharge de la loop 
+     def loop(self):
+        # main loop
+        while dpg.is_dearpygui_running():
+            self.recv()
+            dpg.render_dearpygui_frame()
+
+        dpg.destroy_context()
      
         
 
