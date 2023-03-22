@@ -54,6 +54,8 @@ class CypheredGUI(BasicGUI):
                 )
             encryptor = cipher.encryptor()
 
+        def decrypt():
+            
 
 
 
