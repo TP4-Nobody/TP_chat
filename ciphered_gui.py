@@ -86,9 +86,8 @@ class CipheredGUI(BasicGUI):
         
     # Fonction de déchiffrement
      def decrypt(self, message):
-        print(message)
         iv = base64.b64decode(message[0]['data']) # on récupère l'iv de la base64
-        message = base64.b64decode(message[1]['data']) # on récupère le message de la base64
+        msg = base64.b64decode(message[1]['data']) # on récupère le message de la base64
         cipher = Cipher(
             algorithms.AES(self._key), 
             modes.CTR(iv), 
@@ -96,38 +95,33 @@ class CipheredGUI(BasicGUI):
             )
         # Déchiffrement du message
         decryptor = cipher.decryptor()
-        decrypted = decryptor.update(message) + decryptor.finalize()
+        decrypted = decryptor.update(msg) + decryptor.finalize()
         unpadder = padding.PKCS7(128).unpadder()
         unpadded_data = unpadder.update(decrypted) + unpadder.finalize()
         self._log.info(f"Message déchiffré {unpadded_data}")
-        return unpadded_data.str(message,"utf8")
+        return unpadded_data.decode("utf8") # on retourne le message déchiffré en string
         
 
     # Fonction pour envoyer un message
      def send(self, text) -> None :
-        self._log.info("DRAGON 2")
         message = self.encrypt(text) # on chiffre le message
-        self._log.info("DRAGON 3")
         self._client.send_message(message) # on envoie le message chiffré
-        self._log.info("DRAGON 4")
+        
         
          
     # Fonction pour recevoir un message
      def recv(self) -> None:
          if self._callback is not None:
             for user, message in self._callback.get():
-                self._log.info("DRAGON 5")
                 message = self.decrypt(message) # on déchiffre le message
-                self._log.info("DRAGON 6")
-                self.update_text_screen(f"{user} : {str(message, 'utf8')}") # on affiche le message déchiffré
-                self._log.info("DRAGON 7")
+                self.update_text_screen(f"{user} : {message}") # on affiche le message déchiffré
             self._callback.clear()
 
     
     #Surcharge de la loop 
      def loop(self):
         # main loop
-        while dpg.is_dearpygui_running():
+        while dpg.is_dearpygui_running(): 
             self.recv()
             dpg.render_dearpygui_frame()
 
