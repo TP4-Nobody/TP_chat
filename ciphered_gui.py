@@ -48,7 +48,6 @@ class CipheredGUI(BasicGUI):
         self._client.start(self._callback) # démarrage du client
         self._client.register(name) # enregistrement du nom
         password = dpg.get_value("connection_password") # récupération du password
-
         # Génération de la clé de chiffrement
         kdf = PBKDF2HMAC(
             algorithm=hashes.SHA256(),
@@ -75,12 +74,12 @@ class CipheredGUI(BasicGUI):
             )
         # Chiffrement du message
         self._log.info(f"Message {message}")
-        encryptor = cipher.encryptor()
+        encryptor = cipher.encryptor() # on crée le chiffreur
         padder = padding.PKCS7(128).padder() # ajout de padding pour avoir la bonne taille de bloc
         b_message = bytes(message,"utf8") # passage du message en bytes
         padded_data = padder.update(b_message) + padder.finalize() 
         encrypted = encryptor.update(padded_data) + encryptor.finalize()
-        self._log.info(f"Message chiffré {encrypted}")
+        self._log.info(f"Message chiffré {encrypted}") 
         return iv, encrypted    # on retourne le vecteur d'initialisation et le message chiffré
             
         
@@ -94,10 +93,10 @@ class CipheredGUI(BasicGUI):
             backend=default_backend()
             )
         # Déchiffrement du message
-        decryptor = cipher.decryptor()
-        decrypted = decryptor.update(msg) + decryptor.finalize()
-        unpadder = padding.PKCS7(128).unpadder()
-        unpadded_data = unpadder.update(decrypted) + unpadder.finalize()
+        decryptor = cipher.decryptor() # on crée le déchiffreur
+        decrypted = decryptor.update(msg) + decryptor.finalize() # on déchiffre le message
+        unpadder = padding.PKCS7(128).unpadder() # on retire le padding
+        unpadded_data = unpadder.update(decrypted) + unpadder.finalize() 
         self._log.info(f"Message déchiffré {unpadded_data}")
         return unpadded_data.decode("utf8") # on retourne le message déchiffré en string
         
@@ -107,39 +106,14 @@ class CipheredGUI(BasicGUI):
         message = self.encrypt(text) # on chiffre le message
         self._client.send_message(message) # on envoie le message chiffré
         
-        
          
     # Fonction pour recevoir un message
      def recv(self) -> None:
          if self._callback is not None:
-            for user, message in self._callback.get():
+            for user, message in self._callback.get(): # on récupère les messages
                 message = self.decrypt(message) # on déchiffre le message
                 self.update_text_screen(f"{user} : {message}") # on affiche le message déchiffré
-            self._callback.clear()
-
-    
-    #Surcharge de la loop 
-     def loop(self):
-        # main loop
-        while dpg.is_dearpygui_running(): 
-            self.recv()
-            dpg.render_dearpygui_frame()
-
-        dpg.destroy_context()
-     
-        
-
-
-
-        
-            
-
-            
-
-        
-            
-
-
+            self._callback.clear() # on vide la liste des messages
 
 
 if __name__ == "__main__":
