@@ -12,21 +12,21 @@ class TimeFernetGUI(FernetGUI):
 
     def encrypt(self, message) -> bytes:
         crypted= Fernet(self._key) 
-        Time = time.time() # On récupère le temps
-        Time = int (Time) # On le convertit en int
-        #Time = Time -45
+        temps = time.time() # On récupère le temps
+        temps = int (temps) # On le convertit en int
+        #temps = temps -45
         b_message = bytes(message, 'utf-8') 
-        crypted_message = crypted.encrypt_at_time(b_message, Time) # On chiffre le message
+        crypted_message = crypted.encrypt_at_time(b_message, temps) # On chiffre le message
         return crypted_message # On retourne le message chiffré
     
 
     def decrypt(self, message) -> str :
         msg = base64.b64decode(message['data']) 
         decrypted= Fernet(self._key) 
-        Time = time.time() 
-        Time = int (Time)
+        temps = time.time() 
+        temps = int (temps)
         try:
-            decrypted_message = decrypted.decrypt_at_time(msg, TTL, Time).decode('utf8') # On déchiffre le message
+            decrypted_message = decrypted.decrypt_at_time(msg, TTL, temps).decode('utf8') # On déchiffre le message
             return decrypted_message # On retourne le message déchiffré
         except InvalidToken:
             self._log.info("Le message a expiré")

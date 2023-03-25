@@ -13,6 +13,7 @@ import os
 LENGTH_BYTES = 16 # Longueur d'octet
 NB_ITERATIONS = 100000 # Nombre d'itérations
 LENGTH_BLOCK = 128 # Longueur d'un bloc
+SALT = b'je veux reussir mon semestre'
 
 # Création de la classe CipheredGUI depuis l'héritage de BasicGUI
 class CipheredGUI(BasicGUI):
@@ -58,7 +59,7 @@ class CipheredGUI(BasicGUI):
         kdf = PBKDF2HMAC(
             algorithm=hashes.SHA256(),
             length=LENGTH_BYTES, # longueur de la clé
-            salt=b'je veux reussir mon semestre', 
+            salt=SALT, 
             iterations=NB_ITERATIONS, 
             backend=default_backend()) 
         b_password = bytes(password, "utf8") #Passage du password en bytes
