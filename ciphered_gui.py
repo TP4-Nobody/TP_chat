@@ -1,10 +1,13 @@
 from basic_gui import *
 import logging
 import dearpygui.dearpygui as dpg
+from chat_client import ChatClient
+from generic_callback import GenericCallback
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.primitives import padding, hashes
 from cryptography.hazmat.backends import default_backend
+import base64
 import os
 
 # Création de la classe CipheredGUI depuis l'héritage de BasicGUI
@@ -17,7 +20,7 @@ class CipheredGUI(BasicGUI):
     
     
     # Fonction pour ajouter un champ "password" dans la fenêtre de connexion
-     def _create_connection_window(self)->None:
+     def _create_connection_window(self) -> None:
         # On reprend la méthode de la classe parente
         with dpg.window(label="Connection", pos=(200, 150), width=400, height=300, show=False, tag="connection_windows"):
             
@@ -46,16 +49,14 @@ class CipheredGUI(BasicGUI):
         self._client.register(name) # enregistrement du nom
         password = dpg.get_value("connection_password") # récupération du password
 
-        #self._log.info(f"Password {password}") # affichage du password dans la console
-        
         # Génération de la clé de chiffrement
         kdf = PBKDF2HMAC(
             algorithm=hashes.SHA256(),
             length=16, # 16 bytes = 128 bits
             salt=b'je veux reussir mon semestre', 
             iterations=100000, # nombre d'itérations pour la génération de la clé
-            backend=default_backend())
-        b_password = bytes(password, "utf8")
+            backend=default_backend()) 
+        b_password = bytes(password, "utf8") #Passage du password en bytes
         self._key = kdf.derive(b_password) # dérivation de la clé avec le password
         self._log.info(f"Clé {self._key}") # affichage de la clé dans la console
         dpg.hide_item("connection_windows")
@@ -64,30 +65,33 @@ class CipheredGUI(BasicGUI):
 
     
     # Fonction de chiffrement
-     def encrypt(self, message) -> None :
+     def encrypt(self, message):
         iv = os.urandom(16) # génération d'un vecteur d'initialisation aléatoire
         # Création du chiffreur
         cipher = Cipher(
             algorithms.AES(self._key), 
-            modes.CBC(iv), 
+            modes.CTR(iv), 
             backend=default_backend()
             )
         # Chiffrement du message
         self._log.info(f"Message {message}")
         encryptor = cipher.encryptor()
-        padder = padding.PKCS7(128).padder()
-        b_message = bytes(message,"utf8")
-        padded_data = padder.update(b_message) + padder.finalize()
+        padder = padding.PKCS7(128).padder() # ajout de padding pour avoir la bonne taille de bloc
+        b_message = bytes(message,"utf8") # passage du message en bytes
+        padded_data = padder.update(b_message) + padder.finalize() 
         encrypted = encryptor.update(padded_data) + encryptor.finalize()
         self._log.info(f"Message chiffré {encrypted}")
         return iv, encrypted    # on retourne le vecteur d'initialisation et le message chiffré
             
         
     # Fonction de déchiffrement
-     def decrypt(self, message, iv) -> None :
+     def decrypt(self, message):
+        print(message)
+        iv = base64.b64decode(message[0]['data']) # on récupère l'iv de la base64
+        message = base64.b64decode(message[1]['data']) # on récupère le message de la base64
         cipher = Cipher(
             algorithms.AES(self._key), 
-            modes.CBC(iv), 
+            modes.CTR(iv), 
             backend=default_backend()
             )
         # Déchiffrement du message
@@ -95,6 +99,7 @@ class CipheredGUI(BasicGUI):
         decrypted = decryptor.update(message) + decryptor.finalize()
         unpadder = padding.PKCS7(128).unpadder()
         unpadded_data = unpadder.update(decrypted) + unpadder.finalize()
+        self._log.info(f"Message déchiffré {unpadded_data}")
         return unpadded_data.str(message,"utf8")
         
 
