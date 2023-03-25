@@ -10,6 +10,10 @@ from cryptography.hazmat.backends import default_backend
 import base64
 import os
 
+LENGTH_BYTES = 16 # Longueur d'octet
+NB_ITERATIONS = 100000 # Nombre d'itérations
+LENGTH_BLOCK = 128 # Longueur d'un bloc
+
 # Création de la classe CipheredGUI depuis l'héritage de BasicGUI
 class CipheredGUI(BasicGUI):
      
@@ -21,23 +25,24 @@ class CipheredGUI(BasicGUI):
     
     # Fonction pour ajouter un champ "password" dans la fenêtre de connexion
      def _create_connection_window(self) -> None:
+
         # On reprend la méthode de la classe parente
         with dpg.window(label="Connection", pos=(200, 150), width=400, height=300, show=False, tag="connection_windows"):
-            
             for field in ["host", "port", "name"]:
                 with dpg.group(horizontal=True):
                     dpg.add_text(field)
-                    dpg.add_input_text(default_value=DEFAULT_VALUES[field], tag=f"connection_{field}")
+                    dpg.add_input_text(default_value = DEFAULT_VALUES[field], tag = f"connection_{field}")
 
             # Ajout d'un champ "password" pour la clé de chiffrement
             dpg.add_text('password :')
-            dpg.add_input_text(password=True, tag="connection_password")
+            dpg.add_input_text(password = True, tag = "connection_password")
             
             dpg.add_button(label="Connect", callback=self.run_chat)
 
 
     #Surcharge de la fonction run_chat pour ajouter la génération de la clé de chiffrement
      def run_chat(self, sender, app_data) -> None :
+
         # On reprend la méthode de la classe parente
         host = dpg.get_value("connection_host") # récupération de l'adresse
         port = int(dpg.get_value("connection_port")) # récupération du port
@@ -48,12 +53,13 @@ class CipheredGUI(BasicGUI):
         self._client.start(self._callback) # démarrage du client
         self._client.register(name) # enregistrement du nom
         password = dpg.get_value("connection_password") # récupération du password
+
         # Génération de la clé de chiffrement
         kdf = PBKDF2HMAC(
             algorithm=hashes.SHA256(),
-            length=16, # 16 bytes = 128 bits
+            length=LENGTH_BYTES, # longueur de la clé
             salt=b'je veux reussir mon semestre', 
-            iterations=100000, # nombre d'itérations pour la génération de la clé
+            iterations=NB_ITERATIONS, # nombre d'itérations pour la génération de la clé
             backend=default_backend()) 
         b_password = bytes(password, "utf8") #Passage du password en bytes
         self._key = kdf.derive(b_password) # dérivation de la clé avec le password
@@ -65,17 +71,20 @@ class CipheredGUI(BasicGUI):
     
     # Fonction de chiffrement
      def encrypt(self, message):
-        iv = os.urandom(16) # génération d'un vecteur d'initialisation aléatoire
+
+        iv = os.urandom(LENGTH_BYTES) # génération d'un vecteur d'initialisation aléatoire
+
         # Création du chiffreur
         cipher = Cipher(
             algorithms.AES(self._key), 
             modes.CTR(iv), 
             backend=default_backend()
             )
+        
         # Chiffrement du message
         self._log.info(f"Message {message}")
         encryptor = cipher.encryptor() # on crée le chiffreur
-        padder = padding.PKCS7(128).padder() # ajout de padding pour avoir la bonne taille de bloc
+        padder = padding.PKCS7(LENGTH_BLOCK).padder() # ajout de padding pour avoir la bonne taille de bloc
         b_message = bytes(message,"utf8") # passage du message en bytes
         padded_data = padder.update(b_message) + padder.finalize() 
         encrypted = encryptor.update(padded_data) + encryptor.finalize()
@@ -85,6 +94,7 @@ class CipheredGUI(BasicGUI):
         
     # Fonction de déchiffrement
      def decrypt(self, message):
+        
         iv = base64.b64decode(message[0]['data']) # on récupère l'iv de la base64
         msg = base64.b64decode(message[1]['data']) # on récupère le message de la base64
         cipher = Cipher(
@@ -92,10 +102,11 @@ class CipheredGUI(BasicGUI):
             modes.CTR(iv), 
             backend=default_backend()
             )
+        
         # Déchiffrement du message
         decryptor = cipher.decryptor() # on crée le déchiffreur
         decrypted = decryptor.update(msg) + decryptor.finalize() # on déchiffre le message
-        unpadder = padding.PKCS7(128).unpadder() # on retire le padding
+        unpadder = padding.PKCS7(LENGTH_BLOCK).unpadder() # on retire le padding
         unpadded_data = unpadder.update(decrypted) + unpadder.finalize() 
         self._log.info(f"Message déchiffré {unpadded_data}")
         return unpadded_data.decode("utf8") # on retourne le message déchiffré en string

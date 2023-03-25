@@ -22,4 +22,9 @@ La façon la plus simple de résoudre ce problème est de chiffrer le message av
 
 ### Question 1
 
+Le urandom est un bon g
 
+
+### Autocritique
+
+Mon code crash au moment de recevoir le message quand nous prenons des 
