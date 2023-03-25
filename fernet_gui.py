@@ -26,9 +26,9 @@ class FernetGUI(CipheredGUI):
 
         # Génération de la clé de chiffrement
         self._key = hashlib.sha256(password.encode()).digest() 
-        self._log.info(f"Clé {self._key}") # affichage de la clé dans la console
-        self._key = base64.b64encode(self._key) # encodage de la clé en base64
-        self._log.info(f"Clé encodée {self._key}") # affichage de la clé encodée dans la console
+        self._log.info(f"Clé {self._key}")
+        self._key = base64.b64encode(self._key)
+        self._log.info(f"Clé chiffrée {self._key}") 
 
         dpg.hide_item("connection_windows")
         dpg.show_item("chat_windows")
@@ -37,19 +37,19 @@ class FernetGUI(CipheredGUI):
 
     # Surcharge de la fonction encrypt
     def encrypt(self, message) -> bytes:
-        crypted_key = Fernet(self._key) # On chiffre la clef avec Fernet
-        b_message = bytes(message, 'utf-8') # On encode le message en bytes
-        msg = crypted_key.encrypt(b_message) # On chiffre le message
-        self._log.info(f"Message chiffré : {msg}") # On affiche le message chiffré dans la console
+        crypted = Fernet(self._key) 
+        b_message = bytes(message, 'utf-8') 
+        msg = crypted.encrypt(b_message) # On chiffre le message
+        self._log.info(f"Message chiffré : {msg}") 
         return msg # On retourne le message chiffré
     
 
     # Surcharge de la fonction decrypt
     def decrypt(self, message) -> str :
-        message = base64.b64decode(message['data']) # On décode le message en base64
-        decrypted_key = Fernet(self._key) # On déchiffre le message avec Fernet
-        decrypted_message = decrypted_key.decrypt(message).decode('utf8') # On déchiffre le message
-        self._log.info(f"Message déchiffré : {decrypted_message}") # On affiche le message déchiffré dans la console
+        message = base64.b64decode(message['data']) 
+        decrypted = Fernet(self._key)
+        decrypted_message = decrypted.decrypt(message).decode('utf8') # On déchiffre le message
+        self._log.info(f"Message déchiffré : {decrypted_message}") 
         return decrypted_message # On retourne le message déchiffré
     
 
